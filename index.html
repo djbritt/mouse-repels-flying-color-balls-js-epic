@@ -1,0 +1,109 @@
+<body>
+  <canvas id="canvas"></canvas>
+</body>
+
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const usedColors = new Set();
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  let circles = [];
+  let mouseX, mouseY;
+  const mouseRadius = 50;
+
+  canvas.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
+
+  class Circle {
+    constructor(x, y, r, dx, dy, color) {
+      this.x = x;
+      this.y = y;
+      this.r = r;
+      this.dx = dx;
+      this.dy = dy;
+      this.color = color;
+    }
+
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2, false);
+      ctx.fillStyle = this.color;
+      ctx.fill();
+      ctx.strokeStyle = 'black';
+      ctx.stroke();
+    }
+
+    update() {
+      if (this.x + this.r > canvas.width || this.x - this.r < 0) {
+        this.dx = -this.dx;
+        this.setNewColor();
+      }
+
+      if (this.y + this.r > canvas.height || this.y - this.r < 0) {
+        this.dy = -this.dy;
+        this.setNewColor();
+      }
+
+      // Check for collision with the mouse
+      const distX = this.x - mouseX;
+      const distY = this.y - mouseY;
+      const distance = Math.sqrt(distX * distX + distY * distY);
+
+      if (distance < this.r + mouseRadius) {
+        // Repel the ball away from the mouse
+        const angle = Math.atan2(distY, distX);
+        this.dx = Math.cos(angle) * 2;
+        this.dy = Math.sin(angle) * 2;
+      }
+
+      this.x += this.dx;
+      this.y += this.dy;
+      this.draw();
+    }
+
+    setNewColor() {
+      let newColor;
+      do {
+        newColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+      } while (usedColors.has(newColor));
+
+      usedColors.add(newColor);
+      this.color = newColor;
+    }
+  }
+
+  function init() {
+    for (let i = 0; i < 200; i++) {
+      const r = Math.random() * 15 + 1;
+      const x = Math.random() * (canvas.width - r * 2) + r;
+      const y = Math.random() * (canvas.height - r * 2) + r;
+      const dx = (Math.random() - 0.5) * 2;
+      const dy = (Math.random() - 0.5) * 2;
+      const color = 'white';
+      circles.push(new Circle(x, y, r, dx, dy, color));
+    }
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the mouse sphere
+    ctx.beginPath();
+    ctx.arc(mouseX, mouseY, mouseRadius, 0, Math.PI * 2, false);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.fill();
+
+    for (let i = 0; i < circles.length; i++) {
+      circles[i].update();
+    }
+  }
+
+  init();
+  animate();
+</script>
